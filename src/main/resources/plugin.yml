@@ -1,0 +1,6 @@
+name: Msp-Plugins
+version: ${project.version}
+main: xyz.n7mn.dev.mspplugin.MspPlugin
+api-version: 1.15
+authors: [n3m_]
+website: https://n7mn.xyz/
