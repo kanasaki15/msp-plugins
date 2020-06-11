@@ -1,5 +1,6 @@
 package xyz.n7mn.dev.mspplugin;
 
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class MspPlugin extends JavaPlugin {
@@ -14,7 +15,8 @@ public final class MspPlugin extends JavaPlugin {
     @Override
     public void onDisable() {
         // Plugin shutdown logic
-        getLogger().info("Shutdown msp-plugin");
+        PlayerInteractEvent.getHandlerList().unregister(this);
+        getLogger().info("Disabled msp-plugin");
         this.setEnabled(false);
     }
 

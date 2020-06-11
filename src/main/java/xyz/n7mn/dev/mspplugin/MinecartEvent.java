@@ -2,10 +2,12 @@ package xyz.n7mn.dev.mspplugin;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
 import org.bukkit.entity.Minecart;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.vehicle.VehicleBlockCollisionEvent;
@@ -16,13 +18,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class MinecartEvent implements Listener {
     JavaPlugin plugin = null;
-    boolean b = false;
-    Material BlockTypeBak1;
-    Material BlockTypeBak2;
-    Location BlockBakLoc1;
-    Location BlockBakLoc2;
-    Minecart CartBak;
-    Material CartBlockTypeBak;
+    double defaultSpeed = 0.4d;
+    Material BackBlockType = null;
+    Minecart cart = null;
 
     public MinecartEvent(JavaPlugin p){
         plugin = p;
@@ -31,145 +29,128 @@ public class MinecartEvent implements Listener {
     @EventHandler
     public void createMineCart(VehicleCreateEvent e){
         if (e.getVehicle() instanceof  Minecart){
-            Minecart cart = (Minecart) e.getVehicle();
-            cart.setMaxSpeed(0.4d);
+            cart = (Minecart) e.getVehicle();
+            cart.setMaxSpeed(defaultSpeed);
         }
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.LOWEST)
     public void setSpeed(VehicleMoveEvent e){
         if (e.getVehicle() instanceof Minecart) {
-            Minecart cart = (Minecart) e.getVehicle();
+            //plugin.getLogger().info("a");
+            cart = (Minecart)e.getVehicle();
 
-            int moveX = e.getTo().getBlockX() - e.getFrom().getBlockX();
-            int moveZ = e.getTo().getBlockZ() - e.getFrom().getBlockZ();
+            double moveX = e.getTo().getX() - e.getFrom().getX();
+            double moveZ = e.getTo().getZ() - e.getFrom().getZ();
+            int move = 0;
 
-            Block block1 = null;
-            Block block2 = null;
+            World world = e.getTo().getWorld();
+            Block ToBlock = e.getTo().getBlock();
 
-            String moveRotate = "Y";
-
-            if (moveX != 0) {
-                block1 = cart.getWorld().getBlockAt(cart.getLocation().getBlockX(), cart.getLocation().getBlockY(), cart.getLocation().getBlockZ() - 1);
-                block2 = cart.getWorld().getBlockAt(cart.getLocation().getBlockX(), cart.getLocation().getBlockY(), cart.getLocation().getBlockZ() + 1);
-                moveRotate = "X";
+            int Xplus = 0;
+            int Zplus = 0;
+            if (moveX != 0d){
+                Zplus = 1;
+                move = e.getTo().getBlockX() - e.getFrom().getBlockX();
             }
-            if (moveZ != 0) {
-                block1 = cart.getWorld().getBlockAt(cart.getLocation().getBlockX() - 1, cart.getLocation().getBlockY(), cart.getLocation().getBlockZ());
-                block2 = cart.getWorld().getBlockAt(cart.getLocation().getBlockX() + 1, cart.getLocation().getBlockY(), cart.getLocation().getBlockZ());
-                moveRotate = "Z";
+            if (moveZ != 0d){
+                Xplus = 1;
+                move = e.getTo().getBlockZ() - e.getFrom().getBlockZ();
             }
 
+            // debug
+            //plugin.getLogger().info("moveX : "+moveX);
+            //plugin.getLogger().info("moveZ : "+moveZ);
+            //plugin.getLogger().info("move : "+move);
+            //plugin.getLogger().info("MaxSpeed" + cart.getMaxSpeed());
+
+            Block leftBlock1 = world.getBlockAt(ToBlock.getX() - Xplus,ToBlock.getY(),ToBlock.getZ() - Zplus);
+            Block rightBlock1 = world.getBlockAt(ToBlock.getX() + Xplus,ToBlock.getY(),ToBlock.getZ() + Zplus);
+            Block leftBlock2 = world.getBlockAt(ToBlock.getX() - Xplus,ToBlock.getY() - 1,ToBlock.getZ() - Zplus);
+            Block rightBlock2 = world.getBlockAt(ToBlock.getX() + Xplus,ToBlock.getY() - 1,ToBlock.getZ() + Zplus);
+
+            Block advanceBlock = null;
+            if (moveX > 0) {
+                advanceBlock = world.getBlockAt(ToBlock.getX() + 1,ToBlock.getY(),ToBlock.getZ());
+            }else if (moveX < 0) {
+                advanceBlock = world.getBlockAt(ToBlock.getX() - 1,ToBlock.getY(),ToBlock.getZ());
+            }
+            if (moveZ > 0) {
+                advanceBlock = world.getBlockAt(ToBlock.getX(),ToBlock.getY(),ToBlock.getZ() + 1);
+            }else if (moveZ < 0) {
+                advanceBlock = world.getBlockAt(ToBlock.getX(),ToBlock.getY(),ToBlock.getZ() - 1);
+            }
+            Block turnbackBlock = null;
+            if (moveX > 0) {
+                turnbackBlock = world.getBlockAt(ToBlock.getX() - 1,ToBlock.getY(),ToBlock.getZ());
+            }else if (moveX < 0) {
+                turnbackBlock = world.getBlockAt(ToBlock.getX() + 1,ToBlock.getY(),ToBlock.getZ());
+            }
+            if (moveZ > 0) {
+                turnbackBlock = world.getBlockAt(ToBlock.getX(),ToBlock.getY(),ToBlock.getZ() - 1);
+            }else if (moveZ < 0) {
+                turnbackBlock = world.getBlockAt(ToBlock.getX(),ToBlock.getY(),ToBlock.getZ() + 1);
+            }
+
+
+            // 速度設定
+            if (GetSignSpeed(leftBlock1) != -1d){
+                cart.setMaxSpeed(GetSignSpeed(leftBlock1));
+            }else if (GetSignSpeed(leftBlock2) != -1d){
+                cart.setMaxSpeed(GetSignSpeed(leftBlock2));
+            }else if (GetSignSpeed(rightBlock1) != -1d){
+                cart.setMaxSpeed(GetSignSpeed(rightBlock1));
+            }else if (GetSignSpeed(rightBlock2) != -1d){
+                cart.setMaxSpeed(GetSignSpeed(rightBlock2));
+            }
+/*
+            plugin.getLogger().info("--- SetSpeed ---");
+            plugin.getLogger().info(""+GetSignSpeed(leftBlock1));
+            plugin.getLogger().info(""+GetSignSpeed(leftBlock2));
+            plugin.getLogger().info(""+GetSignSpeed(rightBlock1));
+            plugin.getLogger().info(""+GetSignSpeed(rightBlock2));
+*/
             Sign sign = null;
-            if (block1 != null) {
-                if (SignCheck(block1.getType())) {
-                    sign = (Sign) block1.getState();
-                }
+            if (GetSign(leftBlock1) != null){
+                sign = GetSign(leftBlock1);
             }
-            if (block2 != null) {
-                if (SignCheck(block2.getType())) {
-                    sign = (Sign) block2.getState();
-                }
+            if (sign == null || !sign.getLine(0).equals("[msp]")){
+                sign = GetSign(leftBlock2);
             }
-            if (sign != null && sign.getLine(0).equals("[msp]")) {
-                double speed = cart.getMaxSpeed();
-
-                double tSpeed = -1d;
-                try {
-                    tSpeed = Double.parseDouble(sign.getLine(1));
-                }catch (Exception ex){
-                    tSpeed = -1d;
-                }
-                if (tSpeed != -1d) {
-                    cart.setMaxSpeed(0.4d * Double.parseDouble(sign.getLine(1)));
-                }
-
-                if (sign.getLine(1).equals("Stop")) {
-                    cart.setMaxSpeed(0.4d);
-
-                    int x = cart.getLocation().getBlockX();
-                    int y = cart.getLocation().getBlockY();
-                    int z = cart.getLocation().getBlockZ();
-
-                    CartBlockTypeBak = cart.getWorld().getBlockAt(cart.getLocation()).getType();
-                    CartBak = cart;
-                    cart.getWorld().getBlockAt(cart.getLocation()).setType(Material.RAIL);
-                    if (moveRotate.equals("X")) {
-                        BlockTypeBak1 = cart.getWorld().getBlockAt(x + 1, y, z).getType();
-                        BlockTypeBak2 = cart.getWorld().getBlockAt(x - 1, y, z).getType();
-                        BlockBakLoc1 = cart.getWorld().getBlockAt(x + 1, y, z).getLocation();
-                        BlockBakLoc2 = cart.getWorld().getBlockAt(x - 1, y, z).getLocation();
-
-                        cart.getWorld().getBlockAt(x + 1, y, z).setType(Material.STONE);
-                        cart.getWorld().getBlockAt(x - 1, y, z).setType(Material.STONE);
-                    } else if (moveRotate.equals("Z")) {
-                        BlockTypeBak1 = cart.getWorld().getBlockAt(x, y, z - 1).getType();
-                        BlockTypeBak2 = cart.getWorld().getBlockAt(x, y, z + 1).getType();
-                        BlockBakLoc1 = cart.getWorld().getBlockAt(x, y, z + 1).getLocation();
-                        BlockBakLoc2 = cart.getWorld().getBlockAt(x, y, z - 1).getLocation();
-
-                        cart.getWorld().getBlockAt(x, y, z + 1).setType(Material.STONE);
-                        cart.getWorld().getBlockAt(x, y, z - 1).setType(Material.STONE);
-                    }
-                    b = true;
-                }
+            if (sign == null || !sign.getLine(0).equals("[msp]")){
+                sign = GetSign(rightBlock1);
+            }
+            if (sign == null || !sign.getLine(0).equals("[msp]")){
+                sign = GetSign(rightBlock2);
             }
 
             if (sign != null){
-                if (sign.getLine(0).equals("[msp]") && sign.getLine(1).equals("SpeedCheck")){
-                    sign.setLine(1,(cart.getMaxSpeed() / 0.4d)+"");
-                    sign.setLine(2,"( "+((cart.getMaxSpeed() / 0.4d)*28.8) + "km/h )");
-                    sign.update();
+                // 停止
+                if (sign.getLine(1).equals("Stop")){
+                    cart.setMaxSpeed(defaultSpeed);
+                    BackBlockType = advanceBlock.getType();
+                    if (move != 0){
+                        world.getBlockAt(advanceBlock.getX(),advanceBlock.getY(),advanceBlock.getZ()).setType(Material.GLASS);
+                    }
                 }
             }
-
-            // Stop看板 1block手前で減速させる
-            block1 = null;
-            block2 = null;
-            if (moveRotate.equals("X")){
-                if (moveX > 0){
-                    block1 = cart.getWorld().getBlockAt(cart.getLocation().getBlockX() + 1, cart.getLocation().getBlockY(), cart.getLocation().getBlockZ() + 1);
-                    block2 = cart.getWorld().getBlockAt(cart.getLocation().getBlockX() + 1, cart.getLocation().getBlockY(), cart.getLocation().getBlockZ() - 1);
-                }else{
-                    block1 = cart.getWorld().getBlockAt(cart.getLocation().getBlockX() - 1, cart.getLocation().getBlockY(), cart.getLocation().getBlockZ() + 1);
-                    block2 = cart.getWorld().getBlockAt(cart.getLocation().getBlockX() - 1, cart.getLocation().getBlockY(), cart.getLocation().getBlockZ() - 1);
-                }
-            }else if (moveRotate.equals("Z")){
-                if (moveZ > 0){
-                    block1 = cart.getWorld().getBlockAt(cart.getLocation().getBlockX() + 1, cart.getLocation().getBlockY(), cart.getLocation().getBlockZ() + 1);
-                    block2 = cart.getWorld().getBlockAt(cart.getLocation().getBlockX() - 1, cart.getLocation().getBlockY(), cart.getLocation().getBlockZ() + 1);
-                }else{
-                    block1 = cart.getWorld().getBlockAt(cart.getLocation().getBlockX() + 1, cart.getLocation().getBlockY(), cart.getLocation().getBlockZ() - 1);
-                    block2 = cart.getWorld().getBlockAt(cart.getLocation().getBlockX() - 1, cart.getLocation().getBlockY(), cart.getLocation().getBlockZ() - 1);
-                }
-            }
-            sign = null;
-            if (block1 != null && SignCheck(block1.getType())){
-                sign = (Sign)block1.getState();
-            }
-            if (block2 != null && SignCheck(block2.getType())){
-                sign = (Sign)block2.getState();
-            }
-            if (sign != null && sign.getLine(0).equals("[msp]") && sign.getLine(1).equals("Stop")){
-                cart.setMaxSpeed(0.4d);
-            }
-
         }
     }
 
     @EventHandler
     public void setSignSpeed(SignChangeEvent e) {
+        // スピード表示
         if (e.getLine(0).equals("[msp]")){
 
-            double speed = 0d;
+            double speed;
             try {
                 speed = Double.parseDouble(e.getLine(1));
             }catch (Exception ex){
                 speed = 0d;
             }
-            if (speed >= 0.1d && speed <= 255d){
+            if (speed >= 0.1d && speed <= 50d){
                 e.setLine(2,"Speed :");
-                e.setLine(3,"   "+(speed * 28.8d)+" km/h");
+                e.setLine(3,"   "+GetSpeed(speed)+" km/h");
             }else if(!e.getLine(1).equals("Stop") && !e.getLine(1).equals("SpeedCheck")){
                 e.setLine(1,"1");
                 e.setLine(2,"Speed :");
@@ -180,41 +161,75 @@ public class MinecartEvent implements Listener {
 
     @EventHandler
     public void BlockEvent(VehicleBlockCollisionEvent e){
-        if (b){
-
-            Location tempBlockLoc = e.getBlock().getLocation();
-            if (
-                (tempBlockLoc.getBlockX() == BlockBakLoc1.getBlockX() && tempBlockLoc.getBlockZ() == BlockBakLoc1.getBlockZ()) ||
-                (tempBlockLoc.getBlockX() == BlockBakLoc2.getBlockX() && tempBlockLoc.getBlockZ() == BlockBakLoc2.getBlockZ())
-            ) {
-                /*
-                plugin.getLogger().info("Cart x :" + CartBak.getLocation().getBlockX());
-                plugin.getLogger().info("Cart z :" + CartBak.getLocation().getBlockZ());
-                plugin.getLogger().info("EventBlock x :" + tempBlockLoc.getBlockX());
-                plugin.getLogger().info("EventBlock z :" + tempBlockLoc.getBlockZ());
-                plugin.getLogger().info("BakBlock1 x :" + BlockBakLoc1.getBlockX());
-                plugin.getLogger().info("BakBlock1 z :" + BlockBakLoc1.getBlockZ());
-                plugin.getLogger().info("BakBlock2 x :" + BlockBakLoc2.getBlockX());
-                plugin.getLogger().info("BakBlock2 z :" + BlockBakLoc2.getBlockZ());
-                */
-
-                BlockBakLoc1.getBlock().setType(BlockTypeBak2);
-                BlockBakLoc2.getBlock().setType(BlockTypeBak2);
-                CartBak.getLocation().getBlock().setType(CartBlockTypeBak);
-            }
+        if (BackBlockType != null){
+            Location loc = e.getBlock().getLocation();
+            loc.getBlock().setType(BackBlockType);
+            BackBlockType = null;
         }
     }
 
-    private boolean SignCheck(Material mat){
-        if (mat == Material.ACACIA_SIGN ||
-                mat == Material.BIRCH_SIGN ||
-                mat == Material.DARK_OAK_SIGN ||
-                mat == Material.JUNGLE_SIGN ||
-                mat == Material.OAK_SIGN ||
-                mat == Material.SPRUCE_SIGN){
-            return true;
+    private boolean SignCheck(Block block){
+        try {
+            Material mat = block.getType();
+            if (mat == Material.ACACIA_SIGN ||
+                    mat == Material.BIRCH_SIGN ||
+                    mat == Material.DARK_OAK_SIGN ||
+                    mat == Material.JUNGLE_SIGN ||
+                    mat == Material.OAK_SIGN ||
+                    mat == Material.SPRUCE_SIGN ||
+                    mat == Material.ACACIA_WALL_SIGN ||
+                    mat == Material.BIRCH_WALL_SIGN ||
+                    mat == Material.DARK_OAK_WALL_SIGN ||
+                    mat == Material.JUNGLE_WALL_SIGN ||
+                    mat == Material.OAK_WALL_SIGN ||
+                    mat == Material.SPRUCE_WALL_SIGN
+            ) {
+                return true;
+            }
+        }catch (Exception e){
+            return false;
         }
         return false;
+    }
+
+    private double GetSignSpeed(Block block){
+        String[] text = GetSignText(block);
+        double speed = -1d;
+        if (text[0].equals("[msp]")){
+            if (!text[1].equals("SpeedCheck") && !text[1].equals("Stop")){
+                try {
+                    speed = Double.parseDouble(text[1]) * defaultSpeed;
+                }catch (Exception e){
+                    speed = defaultSpeed;
+                }
+            }
+        }
+        return speed;
+    }
+
+    private String[] GetSignText(Block block){
+
+        Sign sign = null;
+        if(SignCheck(block)){
+            sign = (Sign)block.getState();
+        }
+        if (sign != null){
+            return sign.getLines();
+        }
+        return new String[]{"", "", "", ""};
+    }
+    private Sign GetSign(Block block){
+
+        Sign sign = null;
+        if(SignCheck(block)){
+            sign = (Sign)block.getState();
+        }
+
+        return sign;
+    }
+    private double GetSpeed(double Speed){
+        int t = (int)((Speed * 28.8d) * 100);
+        return t / 100d;
     }
 }
 
