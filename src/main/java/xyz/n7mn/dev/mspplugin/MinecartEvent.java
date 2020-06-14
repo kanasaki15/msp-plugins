@@ -210,10 +210,10 @@ public class MinecartEvent implements Listener {
                 rightBlock = b.getWorld().getBlockAt(tempBlock.getX() + 1,tempBlock.getY(),tempBlock.getZ());
             }
 
-            if (SignCheck(leftBlock) && GetSignText(leftBlock)[1].equals("[msp]")){
+            if (SignCheck(leftBlock) && GetSignText(leftBlock)[0].equals("[msp]")){
                 return leftBlock;
             }
-            if (SignCheck(rightBlock) && GetSignText(rightBlock)[1].equals("[msp]")){
+            if (SignCheck(rightBlock) && GetSignText(rightBlock)[0].equals("[msp]")){
                 return rightBlock;
             }
         }
