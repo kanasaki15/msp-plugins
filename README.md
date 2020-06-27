@@ -4,7 +4,7 @@ Minecraftのトロッコのスピードや停止位置を看板で設定でき�
 「MinecartSpeedPlugin-Plugins」の略
 
 ## 動作確認済みSpigot
-Spigot 1.15.2 (～Ver 1.1 ※ 1.2は未対応)
+Spigot 1.15.2 (～Ver 1.1 ※ 1.2は未対応)<br>
 Spigot 1.16.1 (Ver 1.0～ ※ 1.2でのみ1.16に追加された看板が使用可能)
 
 ## ダウンロード
