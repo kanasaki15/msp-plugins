@@ -130,6 +130,7 @@ public class MinecartEvent implements Listener {
             Material mat = block.getType();
             if (mat == Material.ACACIA_SIGN ||
                     mat == Material.BIRCH_SIGN ||
+                    mat == Material.CRIMSON_SIGN ||
                     mat == Material.DARK_OAK_SIGN ||
                     mat == Material.JUNGLE_SIGN ||
                     mat == Material.OAK_SIGN ||
@@ -139,7 +140,8 @@ public class MinecartEvent implements Listener {
                     mat == Material.DARK_OAK_WALL_SIGN ||
                     mat == Material.JUNGLE_WALL_SIGN ||
                     mat == Material.OAK_WALL_SIGN ||
-                    mat == Material.SPRUCE_WALL_SIGN
+                    mat == Material.SPRUCE_WALL_SIGN ||
+                    mat == Material.CRIMSON_WALL_SIGN
             ) {
                 return true;
             }
