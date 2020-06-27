@@ -135,13 +135,15 @@ public class MinecartEvent implements Listener {
                     mat == Material.JUNGLE_SIGN ||
                     mat == Material.OAK_SIGN ||
                     mat == Material.SPRUCE_SIGN ||
+                    mat == Material.WARPED_SIGN ||
                     mat == Material.ACACIA_WALL_SIGN ||
                     mat == Material.BIRCH_WALL_SIGN ||
+                    mat == Material.CRIMSON_WALL_SIGN ||
                     mat == Material.DARK_OAK_WALL_SIGN ||
                     mat == Material.JUNGLE_WALL_SIGN ||
                     mat == Material.OAK_WALL_SIGN ||
                     mat == Material.SPRUCE_WALL_SIGN ||
-                    mat == Material.CRIMSON_WALL_SIGN
+                    mat == Material.WARPED_WALL_SIGN
             ) {
                 return true;
             }
